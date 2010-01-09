@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (c) 2010 Preemptive Labs / Andreas Bielk (http://preemptive.se)
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+
+<project name="labs-redis" default="all">
+
+  <property name="target" value="${basedir}/build.ant"/>
+  <property name="core.output" value="${target}/production/core"/>
+  <property name="test.output" value="${target}/test/core"/>
+  <property name="core.packagefile" value="${ant.project.name}-0.1.0.ALPHA.jar"/>
+
+  <property name="compiler.args" value="-target 1.6"/>
+
+  <path id="core.classpath">
+    <fileset dir="${basedir}/lib">
+      <include name="*.jar"/>
+    </fileset>
+  </path>
+
+  <path id="core.sourcepath">
+    <dirset dir="${basedir}">
+      <include name="src/main/java"/>
+    </dirset>
+  </path>
+
+  <path id="test.sourcepath">
+    <dirset dir="${basedir}">
+      <include name="src/test/java"/>
+    </dirset>
+  </path>
+
+
+  <target name="compile.core.production" description="Compile core">
+    <mkdir dir="${core.output}"/>
+
+    <javac destdir="${core.output}" >
+      <compilerarg line="${compiler.args}"/>
+      <classpath refid="core.classpath"/>
+      <src refid="core.sourcepath"/>
+      <!--<patternset refid="excluded.from.compilation.core"/>-->
+    </javac>
+
+<!--
+    <copy todir="${core.output}">
+      <fileset dir="${basedir}/src/main/java">
+        <patternset refid="compiler.resources"/>
+        <type type="file"/>
+      </fileset>
+    </copy>
+-->
+  </target>
+
+  <target name="compile.core.test" depends="compile.core.production" description="Compile tests">
+    <mkdir dir="${test.output}"/>
+
+    <javac destdir="${test.output}" >
+      <compilerarg line="${compiler.args}"/>
+     <classpath>
+        <path refid="core.classpath"/>
+        <pathelement location="${core.output}"/>
+      </classpath>
+      <src refid="test.sourcepath"/>
+      <!--<patternset refid="excluded.from.compilation.core"/>-->
+    </javac>
+  </target>
+
+
+  <target name="jar" depends="compile.core.production" description="create jar">
+    <jar destfile="${target}/${core.packagefile}" duplicate="preserve" filesetmanifest="mergewithoutmain">
+      <zipfileset dir="${core.output}"/>
+    </jar>
+  </target>
+
+  <target name="clean" description="cleanup">
+    <delete dir="${target}"/>
+  </target>
+
+  <target name="all" depends="jar" description="build all"/>
+
+</project>

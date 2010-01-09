@@ -1,0 +1,1 @@
+java -server -Xms128M -Xmx128M -XX:+UnlockDiagnosticVMOptions -XX:CompileThreshold=1000 -classpath build.ant/labs-redis-0.1.0.ALPHA.jar:lib/netty-3.2.0.ALPHA2.jar:lib/jredis.jar: se.preemptive.redis.testing.BenchRedisClient

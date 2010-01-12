@@ -5,16 +5,16 @@ labs-redis
 
 ## Why? What about JRedis?
 
-JRedis seems very solid with good performance. So why another client?
+[JRedis][3] seems very solid with good performance. So why another client?
 
-The rationaly for labs-redis is part good, old, not-invented-here syndrome, and part wanting to evaluate Netty and Redis.
+The rationale for labs-redis is part good, old, not-invented-here syndrome, and part wanting to evaluate Netty and Redis.
 I'm in the process of deciding if we are going to use Redis in an upcoming project. _If_ so, I'll finish up the
 labs-redis code and make it production stable. If not, then probably not.
 
 The codebase is small though, so fork and hack to taste!
 
 If we decide to use Redis for an upcoming project we'll probably make some customizations to the Redis server
-and I would rather support an own codebase for the client side than patches against JRedis.
+and I would rather support our own codebase for the client side than patches against [JRedis][3].
 
 The result is more or less the same performance, smaller codebase and different flavour of API.
 Uses piplining with blocking writes and asynchronous reads. Lazy connection handling.
@@ -27,8 +27,8 @@ So far i'm quite happy with the results. Gonna take a look at the Redis internal
 Status
 ------
 
-Labs-redis is pre-alpha at this stage and is *not* ready for production. Although the low level stuff seems stable
-enough, a lot of the redis API is untested. So if you need a Redis client for production, definitly take a look at JRedis.
+labs-redis is pre-alpha at this stage and is *not* ready for production. Although the low level stuff seems stable
+enough, a lot of the redis API is untested. So if you need a Redis client for production, definitly take a look at [JRedis][3].
 
 ## Whats missing
 
@@ -38,7 +38,7 @@ is also wise before a production ready beta. We'll also need a sharding (consist
 Examples
 --------
 
-Labs-redis exposes two levels of API. The lowest level implements the Redis request/response protocol.
+labs-redis exposes two levels of API. The lowest level implements the Redis request/response protocol.
 
     // creates a protocol client connecting to 127.0.0.1
     RedisProtocolClient client = new RedisProtocolClient();
@@ -70,8 +70,8 @@ We also expose a Redis command API
 Performance
 -----------
 
-Labs-redis contains a trivial tool (see BenchRedisClient) for running microbenchmarks. There are also
-some tests for JRedis we used as a sanity-check when testing.
+labs-redis contains a trivial tool (see BenchRedisClient) for running microbenchmarks. There are also
+some tests for [JRedis][3] we used as a sanity-check when testing.
 
 Example from test on Amazon EC2 (High CPU) instance to instance:
 
@@ -90,7 +90,7 @@ Example from test on Amazon EC2 (High CPU) instance to instance:
     Ping              1 600000  1634    367197      1   1636    366748   1506   354244
     Ping              1 600000  1621    370142      1   1622    369914   1517   355919
 
-For small (16 bytes) keys and values JRedis is faster for Get/Set. For larger keys/values about the same.
+For small (16 bytes) keys and values [JRedis][3] is faster for Get/Set. For larger keys/values about the same.
 
     [labs-redis]# ./labs-redis-bench.sh -n 100000 -l 10 -h $s2 -key 16 -value 16 Get,JRedisGet
     Options: {t=1, p=6379, n=100000, value=16, l=10, key=16, h=ip-10-228-110-31.eu-west-1.compute.internal}
@@ -149,7 +149,7 @@ For bigger payloads (8k and up), both labs-redis and jredis saturates the ec2 in
 Dependencies
 ------------
 
-Labs-redis depends on [Netty 3.2.0-ALPHA3][1] for production and [TestNG 5.11][2] for running unit tests.
+labs-redis depends on [Netty 3.2.0-ALPHA3][1] for production and [TestNG 5.11][2] for running unit tests.
 Benchmarking code contains tests for [JRedis][3] and is needed for compiling and running JRedis benchmarks.
 
 All three jars are present in lib/ on github.

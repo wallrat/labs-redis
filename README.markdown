@@ -190,6 +190,12 @@ Building
     -value <size>       Value sizes in bytes (default 16)
 
 
+Author
+------
+
+Andreas Bielk :: andreas@bielk.se :: @wallrat
+
+
 [0]: http://code.google.com/p/redis/
 [1]: https://www.jboss.org/netty
 [2]: http://testng.org/doc/download.html

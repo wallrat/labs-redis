@@ -19,6 +19,7 @@ import org.jboss.netty.buffer.ChannelBuffer;
 import se.preemptive.redis.RedisProtocolClient;
 import se.preemptive.redis.ResponseFuture;
 import se.preemptive.redis.netty.FrameDecoder;
+import se.preemptive.redis.util.Strings;
 
 import static org.jboss.netty.buffer.ChannelBuffers.copiedBuffer;
 import static se.preemptive.redis.util.Strings.join;
@@ -118,7 +119,7 @@ public class RedisStringCommands extends RedisBaseCommands
     for (int i = 0, j = 0; i < keys.length; i++, j += 2)
     {
       args[1 + j] = toBuffer(keys[i]);
-      args[1 + j + 1] = copiedBuffer(values[i], "UTF-8");
+      args[1 + j + 1] = copiedBuffer(values[i], Strings.UTF8);
     }
 
     //TODO: create a sendMultiBulk that does the interleaving instead
@@ -135,7 +136,7 @@ public class RedisStringCommands extends RedisBaseCommands
     for (int i = 0, j = 0; i < keys.length; i++, j += 2)
     {
       args[1 + j] = toBuffer(keys[i]);
-      args[1 + j + 1] = copiedBuffer(values[i], "UTF-8");
+      args[1 + j + 1] = copiedBuffer(values[i], Strings.UTF8);
     }
 
     //TODO: create a sendMultiBulk that does the interleaving instead

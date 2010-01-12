@@ -22,6 +22,7 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipelineCoverage;
 import se.preemptive.redis.util.RedisClientError;
+import se.preemptive.redis.util.Strings;
 
 @ChannelPipelineCoverage("one")
 public class FrameDecoder extends org.jboss.netty.handler.codec.frame.FrameDecoder
@@ -76,7 +77,7 @@ public class FrameDecoder extends org.jboss.netty.handler.codec.frame.FrameDecod
       // handle error replies
       if (firstByte == '-')
       {
-        throw new RedisClientError(frame.toString("UTF-8"));
+        throw new RedisClientError(frame.toString(Strings.UTF8));
         //throw new Error();
       }
 
@@ -94,9 +95,10 @@ public class FrameDecoder extends org.jboss.netty.handler.codec.frame.FrameDecod
       }
 
       // read i
-      ChannelBuffer lenb = buffer.readBytes(idx);
-      String lens = lenb.toString("US-ASCII");
-      int len = Integer.parseInt(lens);
+      //ChannelBuffer lenb = buffer.readBytes(idx);
+      //String lens = lenb.toString("US-ASCII");
+      //int len = Integer.parseInt(lens);
+      int len = atoi(buffer,idx);
 
       // skip CRLF
       buffer.skipBytes(2);

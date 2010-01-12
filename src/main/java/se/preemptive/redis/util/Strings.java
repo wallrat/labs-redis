@@ -16,11 +16,15 @@
 
 package se.preemptive.redis.util;
 
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.List;
 
 public class Strings
 {
+  public static final Charset US_ASCII = Charset.forName("US-ASCII");
+  public static final Charset UTF8 = Charset.forName("UTF-8");
+
   public static String join(char c, String first, String... rest)
   {
     // sum size

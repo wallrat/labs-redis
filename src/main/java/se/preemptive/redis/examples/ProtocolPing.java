@@ -16,31 +16,16 @@
 package se.preemptive.redis.examples;
 
 import se.preemptive.redis.RedisClient;
+import se.preemptive.redis.RedisProtocolClient;
 
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
-public class SetGet
+public class ProtocolPing
 {
   public static void main(String[] args)
-    throws TimeoutException
   {
-    RedisClient client = new RedisClient("127.0.0.1", 6379);
+    // creates a protocol client connecting to 127.0.0.1
+    RedisProtocolClient client = new RedisProtocolClient();
 
-    // set a value and wait for server response
-    // set() returns a ResponseFuture
-    client.set("mykey", "myvalue").block();
-
-    // the future allows client to control timeouts
-    Object value = client.
-      get("mykey").
-      withTimeout(1, TimeUnit.SECONDS);
-
-    System.out.println("mykey = " + value);
-
-    // and response type demarshalling and conversions
-    String value2 = client.get("mykey").asString();
-
-    System.out.println("mykey = " + value2);
+    // sends PING and prints response
+    System.out.println("ping -> " + client.send("PING").asString());
   }
 }

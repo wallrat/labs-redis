@@ -18,6 +18,7 @@ package se.preemptive.redis.commands;
 import org.jboss.netty.buffer.ChannelBuffer;
 import se.preemptive.redis.RedisProtocolClient;
 import se.preemptive.redis.ResponseFuture;
+import se.preemptive.redis.util.Strings;
 
 import static org.jboss.netty.buffer.ChannelBuffers.copiedBuffer;
 
@@ -32,7 +33,7 @@ public class RedisBaseCommands
     this.client = client;
   }
 
-  protected static ChannelBuffer toBuffer(String value) {return copiedBuffer(value, "US-ASCII");}
+  protected static ChannelBuffer toBuffer(String value) {return copiedBuffer(value, Strings.US_ASCII);}
 
   public ResponseFuture ping() { return client.send(PING_CRLF); }
 

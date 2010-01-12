@@ -16,15 +16,14 @@
 package se.preemptive.redis;
 
 import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import se.preemptive.redis.netty.FrameDecoder;
-import se.preemptive.redis.netty.ReadonlyCompositeChannelBuffer;
 import se.preemptive.redis.util.Pair;
 import se.preemptive.redis.util.RedisClientError;
 
-import java.nio.ByteOrder;
-
 import static org.jboss.netty.buffer.ChannelBuffers.copiedBuffer;
+import static se.preemptive.redis.util.Strings.US_ASCII;
 
 /**
  * Client for the Redis protocol
@@ -58,13 +57,14 @@ public class RedisProtocolClient
     //TODO: check ByteOrder in args
     assert args.length > 0;
     if (args.length == 1) return args[0];
-    return new ReadonlyCompositeChannelBuffer(args[0].order(), args);
+    //return new ReadonlyCompositeChannelBuffer(args[0].order(), args);
+    return ChannelBuffers.wrappedBuffer(args);
   }
 
 
   public ResponseFuture send(String command)
   {
-    return send(copiedBuffer(command + "\r\n", "US-ASCII"));
+    return send(copiedBuffer(command + "\r\n", US_ASCII));
   }
 
   public ResponseFuture sendMultiBulk(ChannelBuffer... args)
@@ -82,18 +82,17 @@ public class RedisProtocolClient
 
     int i = 0;
     ChannelBuffer[] parts = new ChannelBuffer[args.length * 3 + 1];
-    parts[i++] = copiedBuffer("*" + args.length + "\r\n", "US-ASCII");
+    parts[i++] = copiedBuffer("*" + args.length + "\r\n", US_ASCII);
 
     for (ChannelBuffer arg : args)
     {
-      parts[i++] = copiedBuffer("$" + arg.readableBytes() + "\r\n", "US-ASCII");
+      parts[i++] = copiedBuffer("$" + arg.readableBytes() + "\r\n", US_ASCII);
       parts[i++] = arg;
       parts[i++] = FrameDecoder.CRLF;
     }
 
-    ChannelBuffer request = new ReadonlyCompositeChannelBuffer(ByteOrder.BIG_ENDIAN, parts);
-
-    //System.out.println(request.toString("UTF-8"));
+    //ChannelBuffer request = new ReadonlyCompositeChannelBuffer(ByteOrder.BIG_ENDIAN, parts);
+    ChannelBuffer request = wrappedReadOnlyBuffer(parts);
 
     return send(request);
   }
@@ -101,6 +100,7 @@ public class RedisProtocolClient
   public ResponseFuture send(ChannelBuffer... args)
   {
     return send(wrappedReadOnlyBuffer(args));
+
 /*
     // in some situations (dep. on network topology and key/value sizes)
     // it's faster do do fragmented writes instead of creating a composite
@@ -120,12 +120,12 @@ public class RedisProtocolClient
     channel.write(f);
 
     return f;
+*/
 
     // queue future
     //ResponseFuture<Object> f = new ResponseFuture<Object>();
     //channel.write(new Pair<ResponseFuture,ChannelBuffer[]>(f,args));
     //return f;
-*/
 
   }
 

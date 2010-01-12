@@ -15,22 +15,16 @@
  */
 package se.preemptive.redis.testing;
 
-import org.jredis.connector.ConnectionSpec;
-import org.jredis.ri.alphazero.JRedisPipeline;
-import org.jredis.ri.alphazero.connection.DefaultConnectionSpec;
-import se.preemptive.redis.RedisClient;
-import se.preemptive.redis.RedisProtocolClient;
+import se.preemptive.redis.testing.bench.BenchTest;
 
-import java.util.Arrays;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.*;
 
 public class BenchRedisClient
 {
-  private static int KEY_SIZE = 16;
-  private static int VALUE_SIZE = 16;
-
   private long testSumItems = 0;
   private long testSumTaken = 0;
 
@@ -38,30 +32,31 @@ public class BenchRedisClient
 
   static
   {
-    options.put("-h", "127.0.0.1");
-    options.put("-p", "6379");
+    // setup some default options
+    options.put("h", "127.0.0.1");
+    options.put("p", "6379");
 
-    options.put("-key", "16");
-    options.put("-value", "16");
+    options.put("key", "16");
+    options.put("value", "16");
 
-    options.put("-l", "1");
-    options.put("-t", "1");
-    options.put("-n", "100000");
+    options.put("l", "1");
+    options.put("t", "1");
+    options.put("n", "100000");
 
   }
 
   public static void main(String[] args)
     throws Exception
   {
-    if (args.length == 1 && "--help".equals(args[0]))
+    if (args.length == 0 || args.length == 1 && "--help".equals(args[0]))
     {
-      System.out.println("Usage: BenchRedisClient [-h <host>] [-p <port>] [-key <length>] [-value <length>] [-n <requests>] [-t <threads>] [-l <loops>] <classname>");
+      System.out.println("Usage: BenchRedisClient [-h <host>] [-p <port>] [-key <length>] [-value <length>] [-n <requests>] [-t <threads>] [-l <loops>] <classname(s)>");
       System.out.println("");
-      System.out.println("<classname>         One or more tests to run (default Get)");
+      System.out.println("<classname(s)>      One or more tests to run (use , as separator)");
       System.out.println("");
       System.out.println("-h <host>           Server hostname (default 127.0.0.1)");
       System.out.println("-p <port>           Server port (default 6379)");
-      System.out.println("-t <threads>        Run paralell tests in n threads (total requests = requests * threads) (default 1)");
+      System.out.println("-t <threads>        Run parallel tests in n threads (total requests = requests * threads) (default 1)");
       System.out.println("-n <requests>       Run n requests in each test (default 100000)");
       System.out.println("-l <loops>          Run all tests n times. Use 0 to loop tests forever (default 1)");
       System.out.println("-key <length>       Key lengths in bytes (default 16)");
@@ -70,11 +65,11 @@ public class BenchRedisClient
     }
 
     // parse options
-    System.out.println("Key size " + KEY_SIZE + " bytes.");
-    System.out.println("Value size " + VALUE_SIZE + " bytes.");
+    parseOptions(args);
+    System.out.println("Options: "+options);
 
     // Headlines
-    System.out.printf("%-10s %8s %6s %15s  %15s  %15s  %15s\n",
+    System.out.printf("%-10s %8s %6s %15s  %5s  %15s  %15s\n",
       "",
       "", "Load",
       "Write",
@@ -84,127 +79,51 @@ public class BenchRedisClient
 
     System.out.printf("%-10s %8s %6s " +
       "%5s %9s  " +
-      "%5s %9s  " +
+      "%5s  " +
       "%5s %9s  " +
       "%5s %9s  " +
       "\n",
       "test", "threads", "items",
       "ms", "req/s",
-      "ms", "req/s",
+      "ms",
       "ms", "req/s",
       "ms", "req/s"
     );
 
     BenchRedisClient bench = new BenchRedisClient();
 
-    for (int i = 0; i < 10; i++)
-    {
-      bench.runTest("get", new GetSetTest(), 2, 500000);
-      //bench.runTest("JR_get", new JRedisGetSetTest(), 1, 500000);
+    // options
+    final String[] testNames = args[args.length-1].split(",");
+    final int requests = Integer.parseInt(options.get("n"));
+    final int loops = Integer.parseInt(options.get("l"));
+    final int threads = Integer.parseInt(options.get("t"));
 
-      // skip first run
-      if (i <= 0)
+    for (String testName : testNames)
+      for (int i = 0; i < loops; i++)
       {
-        bench.testSumTaken = 0;
-        bench.testSumItems = 0;
-        System.out.println();
+        bench.runTest(testName, createTest(testName), threads, requests);
+
+        // skip first run
+        if (i <= 0)
+        {
+          bench.testSumTaken = 0;
+          bench.testSumItems = 0;
+          System.out.println();
+        }
+        else
+        {
+          // rolling stats
+          double ms = bench.testSumTaken / (double) (i + 1);
+          double itemspers = bench.testSumItems / (bench.testSumTaken / 1000.0);
+          System.out.printf("%5.0f %8.0f  ", ms, itemspers);
+          System.out.println();
+        }
+
+        // cleanup
+        System.gc();
+        Thread.sleep(1000);
+        System.gc();
       }
-      else
-      {
-        // rolling stats
-        double ms = bench.testSumTaken / (double) (i + 1);
-        double itemspers = bench.testSumItems / (bench.testSumTaken / 1000.0);
-        System.out.printf("%5.0f %8.0f  ", ms, itemspers);
-        System.out.println();
-      }
-
-      // cleanup
-      System.gc();
-      Thread.sleep(1000);
-      System.gc();
-    }
-
-  }
-
-  static class JRedisGetSetTest extends BenchTest
-  {
-    private ConnectionSpec connectionSpec = DefaultConnectionSpec.newSpec("localhost", 6379, 10, "jredis".getBytes());
-    private final JRedisPipeline pipeline = new JRedisPipeline(connectionSpec);
-    //private final JRedisAsynchClient pipeline = new JRedisAsynchClient(connectionSpec);
-
-    private final String key = createString(BenchRedisClient.KEY_SIZE);
-
-    Future o = null;
-
-    JRedisGetSetTest()
-      throws ExecutionException, InterruptedException
-    {
-      pipeline.flushdb().get();
-      pipeline.set(key, createString(BenchRedisClient.VALUE_SIZE)).get();
-    }
-
-    @Override
-    void teardown()
-    {
-      pipeline.sync().quit();
-      //pipeline.quit();
-      //try
-      //{
-      //  System.out.println("o = " + o.get());
-      //}
-      //catch (InterruptedException e)
-      //{
-      //  e.printStackTrace();
-      //}
-      //catch (ExecutionException e)
-      //{
-      //  e.printStackTrace();
-      //}
-    }
-
-    @Override
-    public Future run()
-    {
-      o = pipeline.get(key);
-      //o = pipeline.ping();
-      return o;
-    }
-  }
-
-  static class GetSetTest extends BenchTest
-  {
-    // setup test data
-    //private final ChannelBuffer value = copiedBuffer("asdasdasdasdasdasdasd", "UTF-8");
-    //private final ChannelBuffer setKeyPart = copiedBuffer("SET " + "mykey" + " " + value.readableBytes() + "\r\n", "UTF-8");
-    //private final ChannelBuffer staticSetCommand = ChannelBuffers.wrappedBuffer(setKeyPart, value, FrameDecoder.CRLF);
-
-    private final RedisClient client = new RedisClient(new RedisProtocolClient());
-
-    private final String key = createString(BenchRedisClient.KEY_SIZE);
-    private final String value = createString(BenchRedisClient.VALUE_SIZE);
-
-    GetSetTest()
-    {
-      client.getProtocolClient().connect();
-      client.select(10);
-      client.flushdb();
-      client.set(key, value).block();
-    }
-
-    public Future run()
-    {
-      //return client.ping();
-      //return client.get(key);
-      return client.set(key, value);
-      //resp = q.set("mykey2", value);
-      //resp = q.set2("mykey2", value);
-      //resp = q.getProtocolClient().test();
-
-      //ChannelBuffer setCommand = new ReadonlyCompositeChannelBuffer(ByteOrder.BIG_ENDIAN, setKeyPart, value, FrameDecoder.CRLF);
-      //ChannelBuffer staticSetCommand = ChannelBuffers.wrappedBuffer(setKeyPart, value, FrameDecoder.CRLF);
-      //resp = q.getProtocolClient().send(setCommand);
-      //resp = q.getProtocolClient().send(staticSetCommand);
-    }
   }
 
 
@@ -318,8 +237,8 @@ public class BenchRedisClient
     // stats for read
     {
       long took = readEnded - writeEnded;
-      double itemspers = totalitems / (took / 1000.0);
-      System.out.printf("%5d %9.0f  ", took, itemspers);
+      //double itemspers = totalitems / (took / 1000.0);
+      System.out.printf("%5d  ", took);
     }
 
     // stats for write + read
@@ -334,21 +253,42 @@ public class BenchRedisClient
   }
 
 
-  static abstract class BenchTest
+  private static BenchTest createTest(String testName)
+    throws ClassNotFoundException, IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException
   {
-    String createString(int size)
-    {
-      byte[] b = new byte[size];
-      b[0] = 'S';
-      b[size - 1] = 'E';
-      Arrays.fill(b, (byte) 'a');
-      return new String(b);
-    }
+    String cName = testName.indexOf('.') == -1 ? "se.preemptive.redis.testing.bench." + testName : testName;
 
-    void setup() {}
-
-    void teardown() {}
-
-    abstract Future run();
+    @SuppressWarnings({"unchecked"})
+    Class<BenchTest> aClass = (Class<BenchTest>) Class.forName(cName);
+    Constructor<BenchTest> testConstructor = aClass.getConstructor(int.class, int.class, Map.class);
+    int keySize = Integer.parseInt(options.get("key"));
+    int valueSize = Integer.parseInt(options.get("value"));
+    return testConstructor.newInstance(keySize,valueSize,options);
   }
+
+
+    private static void parseOptions(String args[])
+  {
+    if (args.length < 1)
+      return;
+
+    String val = null;
+    for (int i=args.length-1; i > -1; i--)
+    {
+      if (args[i].startsWith("-"))
+      {
+        String option = args[i].substring(1, args[i].length());
+
+        if (val != null)
+          options.put(option,val);
+        else
+          options.put(option,"true");
+
+        val = null;
+      }
+      else
+        val = args[i];
+    }
+  }
+
 }

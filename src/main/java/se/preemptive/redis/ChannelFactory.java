@@ -18,11 +18,13 @@ package se.preemptive.redis;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.oio.OioClientSocketChannelFactory;
 import se.preemptive.redis.netty.PipelineFactory;
 import se.preemptive.redis.util.RedisClientError;
 
 import java.net.InetSocketAddress;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -53,15 +55,13 @@ public class ChannelFactory
       }
     };
 
+    final ExecutorService threadPool = Executors.newCachedThreadPool(tf);
+
     bootstrap = new ClientBootstrap(
-      new OioClientSocketChannelFactory(Executors.newCachedThreadPool(tf)));
+      new OioClientSocketChannelFactory(threadPool));
 
     //bootstrap = new ClientBootstrap(
-    //  new NioClientSocketChannelFactory(
-    //    Executors.newCachedThreadPool(tf),
-    //    Executors.newCachedThreadPool(tf)));
-    //
-
+    //  new NioClientSocketChannelFactory(threadPool,threadPool,1));
     //bootstrap.setOption("tcpNoDelay", true);
     //bootstrap.setOption(
     //        "child.receiveBufferSizePredictor",

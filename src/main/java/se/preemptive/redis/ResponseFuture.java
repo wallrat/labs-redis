@@ -18,9 +18,12 @@ package se.preemptive.redis;
 
 import org.jboss.netty.buffer.ChannelBuffer;
 import se.preemptive.redis.util.NotImplementedError;
+import se.preemptive.redis.util.Strings;
 
 import java.nio.charset.Charset;
 import java.util.concurrent.*;
+
+import static se.preemptive.redis.util.Strings.US_ASCII;
 
 /**
  * Returned from RedisProtocolClient and RedisClient
@@ -177,7 +180,7 @@ public class ResponseFuture<V> implements Future<V>
     if (res == null) return 0;
     if (res instanceof ChannelBuffer)
     {
-      String s = ((ChannelBuffer) res).toString("US-ASCII");
+      String s = ((ChannelBuffer) res).toString(US_ASCII);
       return Integer.parseInt(s);
     }
 
@@ -190,7 +193,7 @@ public class ResponseFuture<V> implements Future<V>
     if (res == null) return 0;
     if (res instanceof ChannelBuffer)
     {
-      String s = ((ChannelBuffer) res).toString("US-ASCII");
+      String s = ((ChannelBuffer) res).toString(US_ASCII);
       return Long.parseLong(s);
     }
 

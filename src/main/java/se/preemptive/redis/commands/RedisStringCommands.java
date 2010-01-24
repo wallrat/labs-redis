@@ -95,7 +95,7 @@ public class RedisStringCommands extends RedisBaseCommands
   public ResponseFuture setnx(String key, ChannelBuffer value)
   {
     return client.send(
-      toBuffer("GETSET " + key + " " + value.readableBytes() + "\r\n"),
+      toBuffer("SETNX " + key + " " + value.readableBytes() + "\r\n"),
       value,
       FrameDecoder.CRLF);
   }
